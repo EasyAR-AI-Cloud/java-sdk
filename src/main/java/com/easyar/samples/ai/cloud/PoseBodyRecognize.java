@@ -1,4 +1,4 @@
-package com.easyar.samples.dl.cloud;
+package com.easyar.samples.ai.cloud;
 
 import okhttp3.*;
 import org.json.JSONObject;
@@ -11,40 +11,25 @@ import java.util.concurrent.TimeUnit;
 
 
 public class PoseBodyRecognize {
+    private static final String AI_APPID        = "--here is your AI AppId--";
+    private static final String API_KEY         = "--here is your API Key--";
+    private static final String API_SECRET      = "--here is your API Secret--";
+    private static final String BODY_IMG_PATH   = "twohandonhip.jpg";
 
-    private static final String HOST       = "http://my_uuid.cn1.crs.easyar.com:8001";
-    private static final String AI_KEY    = "--here is your crs dl body image space's key--";
-    private static final String AI_SECRET = "--here is your crs dl body image space's secret--";
-
-
-    public static void main(String[] args) throws IOException {
-
-        String testImagePath = "twohandonhip.jpg";
-
-        OkHttpClient.Builder builder = new OkHttpClient.Builder();
-        builder.connectTimeout(30, TimeUnit.SECONDS);
-        builder.readTimeout(120,TimeUnit.SECONDS);
-
-        OkHttpClient client = builder.build();
-
-        JSONObject params = new JSONObject();
-        params.put("image", Base64.getEncoder().encodeToString(
-                Files.readAllBytes(Paths.get(testImagePath))));
-
-        Auth.signParam(params, AI_KEY, AI_SECRET);
-
-        RequestBody requestBody = FormBody.create(MediaType.parse("application/json; charset=utf-8")
-                , params.toString());
+    public String recognize(Auth auth, String imgPath) throws IOException{
+        JSONObject params = new JSONObject()
+                .put("image", Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(imgPath))));
+        Auth.signParam(params, auth.getAppId(), auth.getApiKey(), auth.getApiSecret());
+        RequestBody requestBody = FormBody.create(MediaType.parse("application/json; charset=utf-8"), params.toString());
         Request request = new Request.Builder()
-                .url(HOST+"/v1/pose/body")
+                .url(Auth.HOST + "/v1/pose/body")
                 .post(requestBody)
                 .build();
-        Call call = client.newCall(request);
-        try {
-            Response response = call.execute();
-            System.out.println(response.body().string());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        return new OkHttpClient.Builder().build().newCall(request).execute().body().string();
+    }
+
+    public static void main(String[] args) throws IOException {
+        Auth accessInfo  =  new Auth(AI_APPID, API_KEY, API_SECRET);
+        System.out.println(new PoseBodyRecognize().recognize(accessInfo, BODY_IMG_PATH));
     }
 }
